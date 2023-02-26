@@ -1,0 +1,59 @@
+plugins {
+    id 'application'
+    id 'java'
+}
+mainClassName = 'io.github.sainttheana.proto.test.Main'
+
+
+repositories { 
+    mavenCentral() 
+}
+// end::repositories[]
+
+// tag::jar[]
+jar {
+    archiveBaseName = 'app'
+    archiveVersion =  '0.1'
+    manifest {
+      attributes(
+      'Main-Class': 'io.github.sainttheana.proto.test.Main',
+      )
+    }
+	
+}
+// end::jar[]
+
+// tag::dependencies[]
+
+tasks.withType(Jar.class).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('fatjar', Jar) {
+  
+  manifest.from jar.manifest
+  classifier = 'all'
+  from {
+    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+  } {
+    
+  }
+  with jar
+}
+
+run{
+    standardInput = System.in
+	
+}
+
+
+configurations {
+    compile {
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+    }
+}
+
+dependencies {
+    implementation project(":aspex")
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}

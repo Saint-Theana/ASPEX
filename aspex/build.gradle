@@ -1,0 +1,31 @@
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+group = 'io.github.sainttheana'
+version = '1.0.0'
+
+sourceCompatibility = 1.8 // java 8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+
+java {
+	withSourcesJar()
+	withJavadocJar()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+		from components.java
+        }
+    }
+}
+
+
+dependencies {
+    implementation 'io.netty:netty-all:4.1.68.Final'
+}
