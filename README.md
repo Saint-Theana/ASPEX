@@ -3,7 +3,7 @@
 
 # Another Software for Protobuf EXperiences
 
-# A Protobuf Encoder/Decoder 
+# A Small? Light-Weight? Fast? Protobuf Encoder/Decoder 
 
 # This library might not be as good as you think,use it at your own risk.
 
