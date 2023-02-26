@@ -1,7 +1,11 @@
 # ASPEX
 [![](https://jitpack.io/v/Saint-Theana/ASPEX.svg)](https://jitpack.io/#Saint-Theana/ASPEX)
 
+# Another Software for Protobuf EXperiences
+
 # A Protobuf Encoder/Decoder 
+
+# This library might not be as good as you think,use it at your own risk.
 
 # Compiler: [ASPEX-Compiler](https://github.com/Saint-Theana/ASPEX-Compiler)
 
@@ -65,7 +69,18 @@ dependencies {
     
 ```
 
-## 2: use the compiler: [ASPEX-Compiler](https://github.com/Saint-Theana/ASPEX-Compiler)
+## or use the compiler: [ASPEX-Compiler](https://github.com/Saint-Theana/ASPEX-Compiler)
+
+## 2.encode Object to bytes
+```java
+    byte[] bytes = new ProtobufEncoder(your object).toByteArray();
+```
+
+## 2.decode bytes to Object
+```java
+    YourObject obj = ProtobufDecoder.decodeFrom(new YourObject(),bytes);
+```
+
 
 
 ## used library:
