@@ -22,7 +22,6 @@ package io.github.sainttheana.proto.util;
 
 import java.nio.*;
 import io.netty.buffer.*;
-import io.netty.util.*;
 
 public class ByteReader {
   private ByteBufAllocator alloc = PooledByteBufAllocator.DEFAULT;
