@@ -54,6 +54,7 @@ configurations {
 }
 
 dependencies {
+	implementation "com.google.code.gson:gson:2.8.6"
     implementation project(":aspex")
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }

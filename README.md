@@ -20,7 +20,7 @@ lallprojects {
 }
 	
 dependencies {
-	implementation 'com.github.Saint-Theana:ASPEX:1.0.0'
+	implementation 'com.github.Saint-Theana:ASPEX:1.0.1'
 }
 ```
 
@@ -45,10 +45,10 @@ dependencies {
     sfixed64 -> @Tag(isFixed=true,isSigned=true) Long
     bool -> Boolean
     string -> String
-    double -> Double
-    float -> Float
+    double -> @Tag(isFloat=true) Double 
+    float -> @Tag(isFloat=true) Float
     bytes -> byte[]
-    enum -> Integer
+    enum -> EnumName
     embed message -> ClassName
     
     //some other type
@@ -61,6 +61,15 @@ dependencies {
            @Tag(tag=2) ... b ...
        }
        List<AMap> xxx
+    //enum class:
+    enum xxx{
+      xxx =1
+      .... =2
+    }  ->
+    public enum xxx{
+        @Tag(tag=1) xxx,
+        @Tag(tag=2) ....
+    }
     //forget about oneof service extend,these are not working.
     //oneof will be transformed as normal type.
     //you can refer to the source code of the compiler.

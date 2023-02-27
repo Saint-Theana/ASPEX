@@ -88,6 +88,16 @@ public class Util
 		return out.toByteArray();
 	}
 	
+	public static byte[] hexToBytes(String str)
+	{
+        String replaceAll = str.replaceAll(" ", "");
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(replaceAll.length() >> 1);
+        for (int i = 0; i <= replaceAll.length() - 2; i += 2)
+		{
+            byteArrayOutputStream.write(Integer.parseInt(replaceAll.substring(i, i + 2), 16) & 255);
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
 	
 	
 	public static byte[] bufToBytes(ByteBuf buf)
@@ -98,7 +108,7 @@ public class Util
 		return h;
 	}
 	
-	public static String byteArrayToHexStringWithoutBlank(byte[] bytes)
+	public static String bytesToHex(byte[] bytes)
 	{
         String hex= "";
         if (bytes != null)

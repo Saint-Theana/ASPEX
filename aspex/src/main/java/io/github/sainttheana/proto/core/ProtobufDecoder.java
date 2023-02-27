@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.lang.reflect.InvocationTargetException;
 
 public class ProtobufDecoder {
   private ByteBuf bb;
@@ -103,29 +104,22 @@ public class ProtobufDecoder {
 
           if (type.isAssignableFrom(Byte.class) || type.isAssignableFrom(byte.class)) {
             if (obj != null) {
-              field.set(instance, (byte) (long) obj);
+              field.set(instance,castToByte(obj));
             }
 
           } else if (type.isAssignableFrom(Integer.class) || type.isAssignableFrom(int.class)) {
             if (obj != null) {
-              field.set(instance, (int) (long) obj);
+              field.set(instance, castToInt(obj));
             }
           } else if (type.isAssignableFrom(Long.class) || type.isAssignableFrom(long.class)) {
             if (obj != null) {
-              field.set(instance, (long) obj);
+				field.set(instance, castToLong(obj));
             }
-          } else if (type.isAssignableFrom(Short.class) || type.isAssignableFrom(short.class)) {
-            if (obj != null) {
-              field.set(instance, (short) (long) obj);
-            }
-          } else if (type.isAssignableFrom(Character.class) || type.isAssignableFrom(char.class)) {
-            if (obj != null) {
-              field.set(instance, (char) (long) obj);
-            }
-          } else if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
+          } 
+		  else if (type.isAssignableFrom(Boolean.class) || type.isAssignableFrom(boolean.class)) {
 
             if (obj != null) {
-              field.set(instance, ((long) obj) == 1);
+              field.set(instance, castToInt(obj) == 1);
             }
 
           } else if (type.isAssignableFrom(Float.class) || type.isAssignableFrom(float.class)) {
@@ -147,11 +141,16 @@ public class ProtobufDecoder {
             if (obj != null) {
               field.set(instance, new String((byte[]) obj));
             }
-          } else if (type.isAssignableFrom(List.class)) {
+          }else if (type.isEnum()) {
+			  if (obj != null) {
+				  field.set(instance,getEnumTagByValue(type,castToInt(obj)));
+			  }
+          }
+		  else if (type.isAssignableFrom(List.class)) {
             Type genericType = field.getGenericType();
             if (genericType instanceof ParameterizedType) {
               ParameterizedType pt = (ParameterizedType) genericType;
-              Class actualTypeArgument = (Class) pt.getActualTypeArguments()[0];
+              Class<?> actualTypeArgument = (Class<?>) pt.getActualTypeArguments()[0];
               List<Object> list = new ArrayList<>();
 
               while (headData != null) {
@@ -190,7 +189,16 @@ public class ProtobufDecoder {
                   if (obj != null) {
                     list.add(new String((byte[]) obj));
                   }
-                } else {
+                }else if (actualTypeArgument.isEnum())
+				{
+					//note: not sure if this is correct
+					ByteReader byteReader = new ByteReader((byte[]) obj);
+					while (byteReader.readableBytes() > 0) {
+						//list.add(byteReader.readByte() == 1);
+						list.add(getEnumTagByValue(actualTypeArgument,byteReader.readByte()));
+					}
+				}
+				else {
                   Object t =
                       ProtobufDecoder.decodeFrom(actualTypeArgument.newInstance(), (byte[]) obj);
                   list.add(t);
@@ -213,13 +221,54 @@ public class ProtobufDecoder {
       }
       this.bb.release();
       return instance;
-    } catch (InstantiationException e) {
+    } catch (Exception e) {
       e.printStackTrace();
       return null;
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-      return null;
-    }
+    } 
+  }
+
+	private Object getEnumTagByValue(Class<?> type, int value) throws NoSuchMethodException, SecurityException, InvocationTargetException, IllegalArgumentException, IllegalAccessException
+  {
+	  for(Field field:type.getDeclaredFields()){
+		  Tag enumTag=field.getAnnotation(Tag.class);
+		  if(enumTag==null){
+			  throw new RuntimeException("enum must use @Tag");
+		  }
+		  if(enumTag.tag()==value){
+		     return type.getDeclaredMethod("valueOf", String.class).invoke(null, field.getName());
+		  }
+	  }
+	  throw new RuntimeException("cannot find enum field for value "+value);
+  }
+
+  private long castToLong(Object obj)
+  {
+	  if(obj instanceof Long){
+		  return ((Long)obj).longValue();
+	  }else if(obj instanceof Integer){
+		  return ((Integer)obj).longValue();
+	  }
+	  throw new RuntimeException("unknow type "+obj.getClass()+" castting for long");
+  }
+
+  private int castToInt(Object obj)
+  {
+	  if(obj instanceof Long){
+		  return ((Long)obj).intValue();
+	  }else if(obj instanceof Integer){
+		  return ((Integer)obj).intValue();
+	  }
+	  throw new RuntimeException("unknow type "+obj.getClass()+" castting for int");
+  }
+
+  private byte castToByte(Object obj)
+  {
+	  if(obj instanceof Long){
+		  return ((Long)obj).byteValue();
+	  }else if(obj instanceof Integer){
+		  return ((Integer)obj).byteValue();
+	  }
+	  throw new RuntimeException("unknow type "+obj.getClass()+" castting for byte");
   }
 
   private Object readCurrentObject(HeadData headData, Tag annotation) {
@@ -234,17 +283,18 @@ public class ProtobufDecoder {
       else if (annotation.isSigned()) {
         obj = bb.readLongLE();
       } else {
-        obj = bb.readLongLE();
+		  byte[] tmp=new byte[8];
+		  bb.readBytes(tmp);
+		  flipBytes(tmp);
+          obj = Long.parseUnsignedLong(Util.bytesToHex(tmp),16);
       }
     } else if (headData.getType() == HeadData.TYPE_NUMBER_32) {
       if (annotation.isFloat()) {
-        int y = bb.readerIndex();
+        //int y = bb.readerIndex();
         float f = bb.readFloatLE();
-
         obj = f;
       } else if (annotation.isSigned()) {
         obj = bb.readIntLE();
-
       } else {
         obj = bb.readUnsignedIntLE();
       }
@@ -262,6 +312,18 @@ public class ProtobufDecoder {
     return obj;
   }
 
+  private void flipBytes(byte[] tmp)
+  {
+	  byte[] newBytes=new byte[tmp.length];
+	  for(int i=0;i<tmp.length;i++){
+		  newBytes[i]=tmp[tmp.length-1-i];
+	  }
+	  for(int i=0;i<tmp.length;i++){
+		  tmp[i]=newBytes[i];
+	  }
+  }
+
+  /*
   private int readCurrentUnsignedVarInt() {
     return readUnsignedVarInt();
   }
@@ -269,13 +331,14 @@ public class ProtobufDecoder {
   private int readCurrentSignedVarInt() {
     return readSignedVarInt();
   }
+  */
 
   private long readCurrentUnsignedVarLong() {
     return readUnsignedVarLong();
   }
 
   private long readCurrentSignedVarLong() {
-    return readSignedVarInt();
+    return readSignedVarLong();
   }
 
   private class HeadData {
@@ -435,7 +498,7 @@ public class ProtobufDecoder {
                   + " "
                   + bb.readerIndex(0)
                   + " "
-                  + Util.byteArrayToHexStringWithoutBlank((Util.bufToBytes(bb))));
+                  + Util.bytesToHex((Util.bufToBytes(bb))));
         }
     }
   }
