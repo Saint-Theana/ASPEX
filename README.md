@@ -20,7 +20,7 @@ lallprojects {
 }
 	
 dependencies {
-	implementation 'com.github.Saint-Theana:ASPEX:1.0.2'
+	implementation 'com.github.Saint-Theana:ASPEX:1.0.3'
 }
 ```
 
