@@ -224,13 +224,16 @@ public class ProtobufEncoder
 				else if (type.isEnum())
 				{
 					Object value = field.get(instance);
-					String enumName=(String)Enum.class.getDeclaredMethod("name").invoke(value);
-					Tag enumTag=type.getField(enumName).getAnnotation(Tag.class);
-					if (enumTag == null)
+					if (value != null)
 					{
+					    String enumName=(String)Enum.class.getDeclaredMethod("name").invoke(value);
+					    Tag enumTag=type.getField(enumName).getAnnotation(Tag.class);
+					    if (enumTag == null)
+					    {
 						throw new RuntimeException("enum must use @Tag");
+					    }
+					    writeNumberByTag(tag, enumTag.tag());
 					}
-					writeNumberByTag(tag, enumTag.tag());
 				}
 				else if (type.isAssignableFrom(List.class))
 				{
